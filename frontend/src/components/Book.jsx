@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { api } from '../api.js'
 
 const APPOINTMENT_SLOTS = Array.from({ length: 18 }, (_, index) => {
   const totalMinutes = 9 * 60 + index * 30
@@ -7,29 +8,6 @@ const APPOINTMENT_SLOTS = Array.from({ length: 18 }, (_, index) => {
   const minutes = totalMinutes % 60
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }).filter((time) => !time.startsWith('13:'))
-
-async function api(url, method = 'GET', body) {
-  const response = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  })
-  const text = await response.text()
-  let data = null
-
-  if (text) {
-    try {
-      data = JSON.parse(text)
-    } catch {
-      data = text
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error((typeof data === 'string' ? data : data?.message) || 'Request failed.')
-  }
-  return data
-}
 
 function getStoredUser() {
   try {
@@ -191,12 +169,12 @@ function Book() {
     setMessage('')
     setIsBooking(true)
     try {
-      await api('/api/appointments', 'POST', {
+      await api('/api/appointments', { method: 'POST', body: {
         patientId: user.id,
         doctorId: doctor.id,
         appointmentDate: date,
         appointmentTime: selectedSlot,
-      })
+      } })
       setIsSuccess(true)
       setMessage('Appointment booked successfully! Redirecting...')
       window.setTimeout(() => {

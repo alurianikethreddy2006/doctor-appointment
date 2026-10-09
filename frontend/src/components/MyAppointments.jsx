@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { api } from '../api.js'
 import SiteNav from './SiteNav.jsx'
 import { SiteFooter } from './Home.jsx'
-
-async function api(url, method = 'GET') {
-  const response = await fetch(url, { method })
-  const text = await response.text()
-  const data = text ? JSON.parse(text) : null
-  if (!response.ok) throw new Error(data?.message || 'Request failed.')
-  return data
-}
 
 function getUser() {
   try {
@@ -78,7 +71,7 @@ function MyAppointments() {
     setError('')
 
     try {
-      await api(`/api/appointments/${id}/cancel`, 'PUT')
+      await api(`/api/appointments/${id}/cancel`, { method: 'PUT' })
       await loadAppointments()
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : 'Unable to cancel appointment.')

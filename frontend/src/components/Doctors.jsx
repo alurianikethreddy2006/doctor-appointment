@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { api } from '../api.js'
 import { SiteFooter } from './Home.jsx'
 import SiteNav from './SiteNav.jsx'
-
-async function getData(url) {
-  const response = await fetch(url)
-  const text = await response.text()
-  const data = text ? JSON.parse(text) : null
-  if (!response.ok) throw new Error(data?.message || 'Unable to load doctor data.')
-  return data
-}
 
 function formatMoney(amount) {
   return `₹${Number(amount || 0).toLocaleString('en-IN')}`
@@ -60,7 +53,7 @@ function Doctors() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getData('/api/hospitals'), getData('/api/doctors')])
+    Promise.all([api('/api/hospitals'), api('/api/doctors')])
       .then(([hospitalData, doctorData]) => {
         if (!active) return
         setHospitals(hospitalData)

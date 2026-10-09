@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api.js'
 
 function Login() {
   const navigate = useNavigate()
@@ -16,23 +17,10 @@ function Login() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/users/login', {
+      const user = await api('/api/users/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: { email: email.trim(), password },
       })
-      const responseText = await response.text()
-      let user
-
-      try {
-        user = responseText ? JSON.parse(responseText) : null
-      } catch {
-        throw new Error('The server returned an invalid response.')
-      }
-
-      if (!response.ok) {
-        throw new Error(user?.message || 'Invalid email or password.')
-      }
 
       if (!user || typeof user !== 'object' || !user.role) {
         throw new Error('The server response is missing user information.')

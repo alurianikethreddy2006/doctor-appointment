@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api.js'
 import SiteNav from './SiteNav.jsx'
-
-async function getData(url) {
-  const response = await fetch(url)
-  const text = await response.text()
-  const data = text ? JSON.parse(text) : null
-  if (!response.ok) throw new Error(data?.message || 'Unable to load MediBook data.')
-  return data
-}
 
 function Home() {
   const navigate = useNavigate()
@@ -20,7 +13,7 @@ function Home() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getData('/api/hospitals'), getData('/api/doctors')])
+    Promise.all([api('/api/hospitals'), api('/api/doctors')])
       .then(([hospitalData, doctorData]) => {
         if (!active) return
         setHospitals(hospitalData)

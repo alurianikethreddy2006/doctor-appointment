@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api.js'
 
 const TABS = [
   { id: 'overview', label: '📊 Overview' },
@@ -26,31 +27,6 @@ const EMPTY_DOCTOR = {
   availableDays: '',
   timings: '',
   hospitalId: '',
-}
-
-async function api(url, method = 'GET', body) {
-  const response = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  })
-  const text = await response.text()
-  let data = null
-
-  if (text) {
-    try {
-      data = JSON.parse(text)
-    } catch {
-      data = text
-    }
-  }
-
-  if (!response.ok) {
-    const message = typeof data === 'string' ? data : data?.message
-    throw new Error(message || `Request failed (${response.status}).`)
-  }
-
-  return data
 }
 
 function fetchAdminData() {
@@ -157,7 +133,7 @@ function Admin() {
     setIsSavingHospital(true)
 
     try {
-      await api('/api/hospitals', 'POST', hospitalForm)
+      await api('/api/hospitals', { method: 'POST', body: hospitalForm })
       setHospitalForm(EMPTY_HOSPITAL)
       setHospitalMessage({ text: 'Hospital added!', success: true })
       await loadAll()
@@ -177,7 +153,7 @@ function Admin() {
     setIsSavingDoctor(true)
 
     try {
-      await api('/api/doctors', 'POST', {
+      await api('/api/doctors', { method: 'POST', body: {
         name: doctorForm.name.trim(),
         specialization: doctorForm.specialization.trim(),
         qualification: doctorForm.qualification.trim(),
@@ -186,7 +162,7 @@ function Admin() {
         availableDays: doctorForm.availableDays.trim(),
         timings: doctorForm.timings.trim(),
         hospital: { id: Number.parseInt(doctorForm.hospitalId, 10) },
-      })
+      } })
       setDoctorForm(EMPTY_DOCTOR)
       setDoctorMessage({ text: 'Doctor added!', success: true })
       await loadAll()
@@ -204,7 +180,7 @@ function Admin() {
     if (!window.confirm(`Delete ${hospital.name}?`)) return
 
     try {
-      await api(`/api/hospitals/${hospital.id}`, 'DELETE')
+      await api(`/api/hospitals/${hospital.id}`, { method: 'DELETE' })
       setHospitalMessage(null)
       await loadAll()
     } catch (error) {
@@ -219,7 +195,7 @@ function Admin() {
     if (!window.confirm(`Delete ${doctor.name}?`)) return
 
     try {
-      await api(`/api/doctors/${doctor.id}`, 'DELETE')
+      await api(`/api/doctors/${doctor.id}`, { method: 'DELETE' })
       setDoctorMessage(null)
       await loadAll()
     } catch (error) {

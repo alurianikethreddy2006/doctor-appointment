@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api.js'
 
 function Register() {
   const navigate = useNavigate()
@@ -16,20 +17,14 @@ function Register() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/users/register', {
+      await api('/api/users/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           name: name.trim(),
           email: email.trim(),
           password,
-        }),
+        },
       })
-
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(error || 'Registration failed. Please try again.')
-      }
 
       setIsSuccess(true)
       setMessage('Registered! Redirecting to login...')
