@@ -2,12 +2,45 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 
-const APPOINTMENT_SLOTS = Array.from({ length: 18 }, (_, index) => {
-  const totalMinutes = 9 * 60 + index * 30
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-}).filter((time) => !time.startsWith('13:'))
+function parseTime(time) {
+  const match = time.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i)
+  if (!match) return null
+
+  let hours = Number(match[1])
+  const minutes = Number(match[2] || 0)
+  const meridiem = match[3]?.toUpperCase()
+
+  if (minutes > 59) return null
+  if (meridiem) {
+    if (hours < 1 || hours > 12) return null
+    hours = (hours % 12) + (meridiem === 'PM' ? 12 : 0)
+  } else if (hours > 23) {
+    return null
+  }
+
+  return hours * 60 + minutes
+}
+
+function getAppointmentSlots(timings) {
+  const match = String(timings || '').match(
+    /^\s*(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)\s*(?:-|–|to)\s*(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)\s*$/i,
+  )
+  if (!match) return []
+
+  const start = parseTime(match[1])
+  const end = parseTime(match[2])
+  if (start === null || end === null || start >= end) return []
+
+  return Array.from({ length: Math.ceil((end - start) / 30) }, (_, index) => {
+    const totalMinutes = start + index * 30
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  }).filter((time) => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes < end
+  })
+}
 
 function getStoredUser() {
   try {
@@ -69,6 +102,7 @@ function Book() {
   const [message, setMessage] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
   const [isBooking, setIsBooking] = useState(false)
+  const appointmentSlots = getAppointmentSlots(doctor?.timings)
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(getCurrentTime()), 30_000)
@@ -260,9 +294,13 @@ function Book() {
               <p className="book-error" role="alert">{slotsError}</p>
             ) : !date ? (
               <p className="book-slot-note">Select a date to see slots</p>
+            ) : appointmentSlots.length === 0 ? (
+              <p className="book-slot-note">
+                No appointment slots fit within this doctor&apos;s available hours.
+              </p>
             ) : (
               <div className="book-slots">
-                {APPOINTMENT_SLOTS.map((slot) => {
+                {appointmentSlots.map((slot) => {
                   const unavailable = bookedSlots.includes(slot) || isPastSlot(slot)
                   return (
                     <button
